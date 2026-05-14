@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#ccc2df",
+                    "surface-dim": "#161121",
+                    "inverse-surface": "#e9def6",
+                    "secondary-fixed": "#e9ddff",
+                    "inverse-primary": "#006c49",
+                    "secondary-fixed-dim": "#d0bcff",
+                    "error": "#ffb4ab",
+                    "surface-bright": "#3c3648",
+                    "on-secondary-fixed": "#23005c",
+                    "on-secondary-fixed-variant": "#5516be",
+                    "surface-container-low": "#1e1929",
+                    "tertiary-container": "#a89eba",
+                    "primary": "#4edea3",
+                    "secondary": "#d0bcff",
+                    "outline": "#86948a",
+                    "on-secondary-container": "#c4abff",
+                    "on-tertiary-fixed": "#1e182d",
+                    "on-tertiary-fixed-variant": "#4a435b",
+                    "on-primary-fixed-variant": "#005236",
+                    "primary-fixed-dim": "#4edea3",
+                    "on-background": "#e9def6",
+                    "on-primary-fixed": "#002113",
+                    "surface-container": "#221d2e",
+                    "surface-variant": "#383244",
+                    "surface-container-highest": "#383244",
+                    "surface-container-high": "#2d2739",
+                    "primary-fixed": "#6ffbbe",
+                    "primary-container": "#10b981",
+                    "tertiary": "#ccc2df",
+                    "surface-container-lowest": "#100b1b",
+                    "secondary-container": "#571bc1",
+                    "inverse-on-surface": "#332e3f",
+                    "surface-tint": "#4edea3",
+                    "surface": "#161121",
+                    "outline-variant": "#3c4a42",
+                    "error-container": "#93000a",
+                    "tertiary-fixed": "#e9defc",
+                    "on-surface-variant": "#bbcabf",
+                    "on-tertiary": "#332d43",
+                    "on-error": "#690005",
+                    "on-tertiary-container": "#3c354c",
+                    "on-primary-container": "#00422b",
+                    "on-primary": "#003824",
+                    "on-surface": "#e9def6",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary": "#3c0091",
+                    "background": "#161121"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sidebar-width": "280px",
+                    "unit": "4px",
+                    "panel-padding": "16px",
+                    "toolbar-height": "48px",
+                    "gutter": "12px"
+            },
+            "fontFamily": {
+                    "mono-data": ["JetBrains Mono"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "mono-label": ["JetBrains Mono"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "mono-data": ["12px", {"lineHeight": "1.0", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                    "mono-label": ["13px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #161121;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #3c4a42;
+        }
+        .canvas-grid {
+            background-image: 
+                linear-gradient(to right, rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background overflow-hidden h-screen w-screen flex flex-col">
+<!-- TopBar Shell -->
+<header class="bg-surface text-primary font-headline-md text-headline-md docked full-width top-0 h-toolbar-height border-b border-outline-variant flex justify-between items-center px-panel-padding w-full z-50">
+<div class="flex items-center gap-gutter">
+<span class="font-headline-md text-headline-md font-bold text-primary">Obsidian Editor</span>
+<nav class="ml-8 flex gap-4">
+<button class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-variant transition-colors px-2 py-1 rounded">File</button>
+<button class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-variant transition-colors px-2 py-1 rounded">Edit</button>
+<button class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-variant transition-colors px-2 py-1 rounded">Selection</button>
+<button class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-variant transition-colors px-2 py-1 rounded">View</button>
+</nav>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex border-r border-outline-variant pr-4 mr-4 gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded text-primary hover:bg-surface-variant cursor-pointer active:scale-95 transition-colors">
+<span class="material-symbols-outlined" data-icon="brush">brush</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-variant cursor-pointer active:scale-95 transition-colors">
+<span class="material-symbols-outlined" data-icon="eraser">Eraser</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-variant cursor-pointer active:scale-95 transition-colors">
+<span class="material-symbols-outlined" data-icon="format_color_fill">format_color_fill</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-variant cursor-pointer active:scale-95 transition-colors">
+<span class="material-symbols-outlined" data-icon="grid_on">grid_on</span>
+</button>
+</div>
+<button class="px-4 py-1.5 bg-primary-container text-on-primary-container font-mono-label text-mono-label font-bold rounded cursor-pointer active:scale-95 hover:shadow-[0_0_8px_#10b981]">Export</button>
+</div>
+</header>
+<main class="flex-1 flex overflow-hidden">
+<!-- Left SideBar: Tile Palette -->
+<aside class="bg-surface-container text-primary font-mono-label text-mono-label docked left-0 w-sidebar-width h-full border-r border-outline-variant flex flex-col shrink-0">
+<div class="p-4 border-b border-outline-variant">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-1">Tile Palette</h2>
+<p class="text-on-surface-variant text-xs opacity-70">Category: Nature</p>
+</div>
+<div class="flex w-full bg-surface-container-low">
+<button class="flex-1 py-3 flex flex-col items-center gap-1 bg-secondary-container text-on-secondary-container border-l-2 border-primary transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="text-[10px] uppercase font-bold">Tiles</span>
+</button>
+<button class="flex-1 py-3 flex flex-col items-center gap-1 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="park">park</span>
+<span class="text-[10px] uppercase font-bold">Assets</span>
+</button>
+<button class="flex-1 py-3 flex flex-col items-center gap-1 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="lightbulb">lightbulb</span>
+<span class="text-[10px] uppercase font-bold">Lights</span>
+</button>
+<button class="flex-1 py-3 flex flex-col items-center gap-1 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+<span class="text-[10px] uppercase font-bold">Zones</span>
+</button>
+</div>
+<div class="p-4 overflow-y-auto custom-scrollbar flex-1">
+<div class="grid grid-cols-4 gap-2">
+<!-- Tile Item -->
+<div class="aspect-square bg-surface-container-lowest border-2 border-primary shadow-[0_0_8px_#10b981] cursor-pointer">
+<img alt="Selected grass tile" class="w-full h-full object-cover" data-alt="A macro digital texture of vibrant green pixel-art grass blades for a top-down RPG map. The style is crisp and detailed with high contrast, using an emerald green palette to match a professional dark-themed game editor. The lighting is uniform and flat to serve as a repeatable terrain tile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyIfRr954_DL_S_T5sJYCTmol9cNREB80WltiZLprUie8A-hGjeWI7OsPqIzg-81FOp8DNNxHm939J47lrtV8njMxOTXJLPQ3XUr4wVlTgwMerXWaOWwfOLbCHlFdyu8Iym-QcxuzKdZN-l4-46xSCra__XHpmN22ZS_nMpPTSrQRgfb-gs4tBXuWGPNrtzVcC1gtks8-Z04c6PSxeImmpXGZGqwqDT_t-rja0dBSf-WJM4Dev9OVo9X2RR-LssxeDlL4vAiF2RtE"/>
+</div>
+<!-- Mock Tiles -->
+<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group">
+<img alt="Stone tile" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" data-alt="A digital asset tile showing a grey cobblestone path texture with dark recessed grout lines. The aesthetic is clean and industrial, designed for an RPG world map system. The lighting is soft and top-down, maintaining a professional high-contrast dark mode feel with subtle violet undertones in the shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuADTa5UVuOaH-ZJj4Ez0t8hnIhUF8NwgqIhOCjyMck1kondKvn-dZkUeqU65IKXiiRlQXUU9_Myx8-MFRc8tThWQRBx9Xk4YUZ05UHIfVS-sxvVEOvvZRI7j2nxbxj70t-09ioy_OVcspXIiR1qUBEoV2yujuS3Vpa4YL0_2Qe2EEoHuE8pb6xQBsjmtlRDw7_ah-JkKNhmPAXujyWROGW4hz_iphRLVz-0Pmvqw_DXvBbSlOb1MlsgGNP-hSpNizSj3kpoLEq6-cY"/>
+</div>
+<!-- Repeating mock items for grid -->
+<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
+<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
+<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
+<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
+<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
+<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
+<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
+<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
+</div>
+<div class="mt-8">
+<h3 class="text-[10px] uppercase font-bold text-on-surface-variant mb-4 tracking-wider">Active Tool</h3>
+<div class="bg-surface-container-high rounded p-3 flex items-center gap-3 border border-outline-variant">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="brush">brush</span>
+</div>
+<div>
+<p class="font-mono-label text-on-surface leading-tight">Paint Brush</p>
+<p class="text-[10px] text-on-surface-variant">Size: 1x1 Tile</p>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Center Canvas -->
+<section class="flex-1 bg-surface-dim relative overflow-hidden flex items-center justify-center p-8">
+<canvas id="map-canvas" class="w-full h-full bg-[#0f0a1a] shadow-2xl border border-outline-variant relative overflow-hidden group"></canvas>
+<!-- Canvas Floating Controls -->
+<div class="absolute bottom-6 right-6 flex flex-col gap-2">
+<button class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant"><span class="material-symbols-outlined">add</span></button>
+<button class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant"><span class="material-symbols-outlined">remove</span></button>
+<button class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant"><span class="material-symbols-outlined">center_focus_strong</span></button>
+</div>
+</section>
+<!-- Right SideBar: Inspector -->
+<aside class="bg-surface-container text-primary font-mono-label text-mono-label docked right-0 w-sidebar-width h-full border-l border-outline-variant flex flex-col shrink-0">
+<!-- Layers Panel -->
+<div class="flex-1 flex flex-col min-h-0">
+<div class="p-3 border-b border-outline-variant flex items-center justify-between">
+<h3 class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Layers</h3>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant cursor-pointer hover:text-primary" data-icon="add_box">add_box</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant cursor-pointer hover:text-primary" data-icon="delete">delete</span>
+</div>
+</div>
+<div class="overflow-y-auto custom-scrollbar flex-1 bg-surface-container-low">
+<!-- Layer Item Active -->
+<div class="px-4 py-2 flex items-center gap-3 bg-secondary-container/20 border-l-2 border-primary group">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="visibility" data-weight="fill" style="font-variation-settings: 'FILL' 1;">visibility</span>
+<span class="font-mono-label text-on-surface flex-1">Ground_01</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-surface" data-icon="lock_open">lock_open</span>
+</div>
+<!-- Layer Item -->
+<div class="px-4 py-2 flex items-center gap-3 hover:bg-surface-container-high transition-colors group">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-surface" data-icon="visibility">visibility</span>
+<span class="font-mono-label text-on-surface-variant group-hover:text-on-surface flex-1">Objects_Top</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="lock">lock</span>
+</div>
+<div class="px-4 py-2 flex items-center gap-3 hover:bg-surface-container-high transition-colors group">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-surface" data-icon="visibility_off">visibility_off</span>
+<span class="font-mono-label text-on-surface-variant group-hover:text-on-surface flex-1 opacity-50">Collision_Map</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="lock_open">lock_open</span>
+</div>
+<div class="px-4 py-2 flex items-center gap-3 hover:bg-surface-container-high transition-colors group">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-surface" data-icon="visibility">visibility</span>
+<span class="font-mono-label text-on-surface-variant group-hover:text-on-surface flex-1">Trigger_Events</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="lock_open">lock_open</span>
+</div>
+</div>
+</div>
+<!-- Properties Panel -->
+<div class="h-64 border-t border-outline-variant flex flex-col bg-surface-container">
+<div class="p-3 border-b border-outline-variant">
+<h3 class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Properties</h3>
+</div>
+<div class="p-4 space-y-4 overflow-y-auto custom-scrollbar">
+<div class="space-y-1">
+<label class="text-[10px] text-on-surface-variant uppercase">Name</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none" type="text" value="Grass_Tile_04"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="text-[10px] text-on-surface-variant uppercase">X Pos</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none text-center" type="text" value="12"/>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] text-on-surface-variant uppercase">Y Pos</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none text-center" type="text" value="08"/>
+</div>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] text-on-surface-variant uppercase">Opacity</label>
+<div class="flex items-center gap-3">
+<input class="flex-1 accent-primary" type="range"/>
+<span class="text-xs text-on-surface">100%</span>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Footer / Status Bar Shell -->
+<footer class="bg-surface-container-lowest text-tertiary font-mono-data text-mono-data docked full-width bottom-0 h-[32px] border-t border-outline-variant fixed bottom-0 w-full flex items-center justify-between px-gutter z-50">
+<div class="flex items-center gap-6">
+<span class="text-on-surface-variant">X: 12, Y: 08 | Zoom: 100% | Layer: Ground_01</span>
+<span class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-[14px]" data-icon="memory">memory</span>
+<span>RAM: 245MB</span>
+</span>
+</div>
+<div class="flex items-center gap-4">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Documentation</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Shortcuts</a>
+<div class="h-3 w-px bg-outline-variant mx-1"></div>
+<span class="font-mono-label text-tertiary">v1.4.0-stable</span>
+</div>
+</footer>
+<script>
+const CELL_SIZE = 32;
+const MAP_COLS = 40;
+const MAP_ROWS = 30;
+const mapData = Array.from({length: MAP_ROWS}, () => Array(MAP_COLS).fill(0));
+
+const canvas = document.getElementById('map-canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.08)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= canvas.width; x += CELL_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= canvas.height; y += CELL_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+}
+
+window.addEventListener('load', () => {
+    resizeCanvas();
+    draw();
+});
+
+window.addEventListener('resize', () => {
+    resizeCanvas();
+    draw();
+});
+</script>
+</body></html>
