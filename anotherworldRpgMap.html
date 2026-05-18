@@ -106,6 +106,11 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #3c4a42;
         }
+        #properties-drag-handle:hover #drag-handle-indicator,
+        #properties-drag-handle.dragging #drag-handle-indicator {
+          opacity: 1;
+          background: #4edea3;
+        }
     </style>
 </head>
 <body class="bg-background text-on-background overflow-hidden h-screen w-screen flex flex-col">
@@ -180,6 +185,24 @@
     <span class="material-symbols-outlined" data-icon="crop_square">crop_square</span>
   </button>
 </div>
+<div class="flex border-r border-outline-variant pr-4 mr-4 gap-1">
+  <button
+    id="toolbar-btn-undo"
+    onclick="undo()"
+    title="Undo (Ctrl+Z)"
+    class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high cursor-pointer active:scale-95 transition-all duration-150 opacity-40 cursor-not-allowed"
+    disabled>
+    <span class="material-symbols-outlined" data-icon="undo">undo</span>
+  </button>
+  <button
+    id="toolbar-btn-redo"
+    onclick="redo()"
+    title="Redo (Ctrl+Y)"
+    class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high cursor-pointer active:scale-95 transition-all duration-150 opacity-40 cursor-not-allowed"
+    disabled>
+    <span class="material-symbols-outlined" data-icon="redo">redo</span>
+  </button>
+</div>
 <button class="px-4 py-1.5 bg-primary-container text-on-primary-container font-mono-label text-mono-label font-bold rounded cursor-pointer active:scale-95 hover:shadow-[0_0_8px_#10b981]">Export</button>
 </div>
 </header>
@@ -226,15 +249,15 @@
 <canvas id="map-canvas" class="bg-[#0f0a1a] shadow-2xl border border-outline-variant"></canvas>
 <!-- Canvas Floating Controls -->
 <div class="absolute bottom-6 right-6 flex flex-col gap-2">
-<button class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant"><span class="material-symbols-outlined">add</span></button>
-<button class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant"><span class="material-symbols-outlined">remove</span></button>
-<button class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant"><span class="material-symbols-outlined">center_focus_strong</span></button>
+<button id="zoom-in-btn" onclick="zoomIn()" class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant cursor-pointer"><span class="material-symbols-outlined">add</span></button>
+<button id="zoom-out-btn" onclick="zoomOut()" class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant cursor-pointer"><span class="material-symbols-outlined">remove</span></button>
+<button id="zoom-reset-btn" onclick="resetZoom()" class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant cursor-pointer"><span class="material-symbols-outlined">center_focus_strong</span></button>
 </div>
 </section>
 <!-- Right SideBar: Inspector -->
 <aside class="bg-surface-container text-primary font-mono-label text-mono-label docked right-0 w-sidebar-width h-full border-l border-outline-variant flex flex-col shrink-0">
 <!-- Layers Panel -->
-<div class="flex-1 flex flex-col min-h-0">
+<div class="flex-1 flex flex-col min-h-0 overflow-hidden">
 <div class="p-3 border-b border-outline-variant flex items-center justify-between">
 <h3 class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Layers</h3>
 <div class="flex gap-2">
@@ -267,12 +290,56 @@
 </div>
 </div>
 </div>
+<div id="properties-drag-handle"
+  style="height: 5px; cursor: row-resize; background: transparent; flex-shrink: 0; position: relative; z-index: 10;"
+  title="Drag to resize Properties panel">
+  <div style="
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 3px;
+    border-radius: 9999px;
+    background: var(--color-outline-variant, #3c4a42);
+    opacity: 0.6;
+    transition: opacity 0.15s, background 0.15s;
+  " id="drag-handle-indicator"></div>
+</div>
 <!-- Properties Panel -->
-<div class="h-64 border-t border-outline-variant flex flex-col bg-surface-container">
+<div id="properties-panel" class="border-t border-outline-variant flex flex-col bg-surface-container" style="height: 260px; min-height: 80px; max-height: 70vh; flex-shrink: 0;">
 <div class="p-3 border-b border-outline-variant">
 <h3 class="text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">Properties</h3>
 </div>
 <div class="p-4 space-y-4 overflow-y-auto custom-scrollbar">
+
+  <!-- Map Size Section -->
+  <div class="space-y-2 pb-3 border-b border-outline-variant">
+    <label class="text-[10px] text-on-surface-variant uppercase tracking-wider">Map Size</label>
+    <div class="grid grid-cols-2 gap-2">
+      <div class="space-y-1">
+        <label class="text-[10px] text-on-surface-variant">W (cols)</label>
+        <input id="input-map-cols"
+          type="number" min="10" max="200" value="40"
+          class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none text-center"/>
+      </div>
+      <div class="space-y-1">
+        <label class="text-[10px] text-on-surface-variant">H (rows)</label>
+        <input id="input-map-rows"
+          type="number" min="10" max="200" value="30"
+          class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none text-center"/>
+      </div>
+    </div>
+    <button id="btn-apply-map-size"
+      onclick="resizeMap(
+        parseInt(document.getElementById('input-map-cols').value),
+        parseInt(document.getElementById('input-map-rows').value)
+      )"
+      class="w-full py-1.5 rounded text-[11px] font-bold bg-primary-container text-on-primary-container hover:opacity-90 active:scale-95 transition-all">
+      Apply
+    </button>
+    <p class="text-[10px] text-warning">⚠ New cells outside current bounds will be empty</p>
+  </div>
 <div class="space-y-1">
 <label class="text-[10px] text-on-surface-variant uppercase">Name</label>
 <input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none" type="text" value="Grass_Tile_04"/>
@@ -318,9 +385,9 @@
 </footer>
 <script>
 const CELL_SIZE = 32;
-const MAP_COLS = 40;
-const MAP_ROWS = 30;
-const mapData = Array.from({length: MAP_ROWS}, () => Array(MAP_COLS).fill(0));
+let MAP_COLS = 40;
+let MAP_ROWS = 30;
+let mapData = Array.from({length: MAP_ROWS}, () => Array(MAP_COLS).fill(0));
 const TILE_COLORS = {
     0: null,
     1: { color: 'rgba(52, 120, 52, 0.85)',   label: 'Grass',    icon: 'landscape'  },
@@ -332,8 +399,19 @@ const TILE_COLORS = {
 };
 let selectedTileId = 1;
 let activeTool = 'brush';   // options: 'brush' | 'eraser' | 'fill' | 'select'
+let undoStack = [];         // max 50 entries
+let redoStack = [];         // cleared on new actions
 let canvasW = 0;
 let canvasH = 0;
+
+// Transform state for zoom and pan
+let viewOffsetX = 0;        // pan offset in CSS pixels
+let viewOffsetY = 0;
+let viewScale = 1.0;        // zoom scale, range 0.25 – 4.0
+let isPanning = false;      // currently panning
+let panStartX = 0;          // pan start position
+let panStartY = 0;
+let spaceHeld = false;      // Space key is held
 
 const canvas = document.getElementById('map-canvas');
 const ctx = canvas.getContext('2d');
@@ -346,25 +424,68 @@ function padCell(value) {
     return String(value).padStart(2, '0');
 }
 
-function updateStatusText(col, row) {
+function updateStatusBar(col = hoverCol, row = hoverRow) {
     if (!statusSpan) return;
     const xText = col != null ? padCell(col) : '--';
     const yText = row != null ? padCell(row) : '--';
-    statusSpan.textContent = `X: ${xText}, Y: ${yText} | Zoom: 100% | Layer: Ground_01`;
+    const zoomText = Math.round(viewScale * 100) + '%';
+    statusSpan.textContent = `X: ${xText}, Y: ${yText} | Zoom: ${zoomText} | Layer: Ground_01`;
+}
+
+function updateStatusText(col, row) {
+    updateStatusBar(col, row);
+}
+
+function screenToMap(screenX, screenY) {
+    const rect = canvas.getBoundingClientRect();
+    // Mouse position in CSS pixels, relative to canvas top-left
+    const cssX = screenX - rect.left;
+    const cssY = screenY - rect.top;
+    // Inverse of applyTransform (all in CSS pixel space):
+    //   physical_x = cssX * dpr
+    //   after setTransform: drawn_x = (physical_x - offset*dpr) / (dpr*viewScale)
+    //                               = (cssX - viewOffsetX) / viewScale   ← DPR cancels
+    // So map pixel = (cssX - viewOffsetX) / viewScale
+    const mapPixelX = (cssX - viewOffsetX) / viewScale;
+    const mapPixelY = (cssY - viewOffsetY) / viewScale;
+    const col = Math.floor(mapPixelX / CELL_SIZE);
+    const row = Math.floor(mapPixelY / CELL_SIZE);
+    return { col, row };
 }
 
 function getCanvasCell(event) {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const col = Math.floor(x / CELL_SIZE);
-    const row = Math.floor(y / CELL_SIZE);
+    const cell = screenToMap(event.clientX, event.clientY);
+    const col = cell.col;
+    const row = cell.row;
 
     if (col < 0 || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) {
         return null;
     }
 
     return { col, row };
+}
+
+function applyTransform(ctx) {
+    const dpr = window.devicePixelRatio || 1;
+    // Strategy: use TWO separate transforms.
+    // 1) DPR scale: maps CSS pixels → physical pixels (base layer)
+    // 2) Pan + Zoom applied on top, all in CSS pixel units.
+    //
+    // setTransform(a, b, c, d, e, f) where e,f are in PHYSICAL pixels.
+    // So: scale = dpr * viewScale, offset = viewOffsetX * dpr (CSS→physical).
+    //
+    // screenToMap() works in CSS pixels:
+    //   mapPixelX = (cssX - viewOffsetX) / viewScale
+    // This is consistent because both use viewOffsetX in CSS pixels,
+    // and viewScale as the zoom factor — DPR cancels out.
+    ctx.setTransform(
+        dpr * viewScale,
+        0,
+        0,
+        dpr * viewScale,
+        Math.round(viewOffsetX * dpr),
+        Math.round(viewOffsetY * dpr)
+    );
 }
 
 function resizeCanvas() {
@@ -374,21 +495,24 @@ function resizeCanvas() {
     canvasW = section.clientWidth;
     canvasH = section.clientHeight;
 
-    // Physical pixel resolution
-    canvas.width = canvasW * dpr;
+    canvas.width  = canvasW * dpr;
     canvas.height = canvasH * dpr;
-
-    // Display size in CSS pixels
-    canvas.style.width = canvasW + 'px';
+    canvas.style.width  = canvasW + 'px';
     canvas.style.height = canvasH + 'px';
 
-    // Scale context so all drawing uses CSS pixel coordinates
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Base DPR scale is set here once.
+    // applyTransform() will MULTIPLY on top of this via setTransform each draw call.
+    // We do NOT set transform here — draw() handles it entirely.
 }
 
 function draw() {
-    // Clear using CSS pixel dimensions (coordinate system after setTransform)
-    ctx.clearRect(0, 0, canvasW, canvasH);
+    // Clear canvas (reset transform first)
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Apply pan and zoom transform
+    applyTransform(ctx);
 
     // Paint existing cells using TILE_COLORS
     for (let row = 0; row < MAP_ROWS; row++) {
@@ -414,29 +538,44 @@ function draw() {
 
     // Grid lines on top
     ctx.strokeStyle = 'rgba(16, 185, 129, 0.08)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= canvasW; x += CELL_SIZE) {
+    // lineWidth is in the transformed (CSS pixel) space — keep at 1/viewScale
+    // so grid lines always appear 1 physical pixel wide regardless of zoom
+    ctx.lineWidth = 1 / viewScale;
+    for (let x = 0; x <= MAP_COLS * CELL_SIZE; x += CELL_SIZE) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvasH);
+        ctx.lineTo(x, MAP_ROWS * CELL_SIZE);
         ctx.stroke();
     }
 
-    for (let y = 0; y <= canvasH; y += CELL_SIZE) {
+    for (let y = 0; y <= MAP_ROWS * CELL_SIZE; y += CELL_SIZE) {
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(canvasW, y);
+        ctx.lineTo(MAP_COLS * CELL_SIZE, y);
         ctx.stroke();
     }
 }
 
-function paintCell(col, row) {
-    if (row < 0 || row >= MAP_ROWS || col < 0 || col >= MAP_COLS) return;
-    if (activeTool === 'brush') {
-        mapData[row][col] = selectedTileId;
-    } else if (activeTool === 'eraser') {
-        mapData[row][col] = 0;
+function updateCursorStyle() {
+    if (isPanning) {
+        canvas.style.cursor = 'grabbing';
+    } else if (spaceHeld) {
+        canvas.style.cursor = 'grab';
+    } else {
+        canvas.style.cursor = 'crosshair';
     }
+}
+
+function clampPan() {
+    const mapPixelW = MAP_COLS * CELL_SIZE * viewScale;
+    const mapPixelH = MAP_ROWS * CELL_SIZE * viewScale;
+    const minX = -(mapPixelW - canvasW / 2);
+    const maxX = canvasW / 2;
+    const minY = -(mapPixelH - canvasH / 2);
+    const maxY = canvasH / 2;
+    
+    viewOffsetX = Math.max(minX, Math.min(maxX, viewOffsetX));
+    viewOffsetY = Math.max(minY, Math.min(maxY, viewOffsetY));
 }
 
 function setActiveTool(tool) {
@@ -497,7 +636,25 @@ function setActiveTool(tool) {
 
 canvas.addEventListener('mousedown', (event) => {
     const cell = getCanvasCell(event);
+    
+    // Check for panning triggers
+    const isSpacePan = spaceHeld && event.button === 0;  // Space + left mouse
+    const isMiddleButtonPan = event.button === 1;         // Middle mouse
+    const isBothButtonsPan = event.buttons === 3;         // Left+Right buttons
+    
+    if (isSpacePan || isMiddleButtonPan || isBothButtonsPan) {
+        isPanning = true;
+        panStartX = event.clientX;
+        panStartY = event.clientY;
+        if (isMiddleButtonPan) event.preventDefault();
+        updateCursorStyle();
+        return;
+    }
+
     if (!cell) return;
+
+    // Save history BEFORE making any changes (for entire drag stroke)
+    saveHistory();
 
     isPainting = true;
     paintCell(cell.col, cell.row);
@@ -508,6 +665,19 @@ canvas.addEventListener('mousedown', (event) => {
 });
 
 canvas.addEventListener('mousemove', (event) => {
+    if (isPanning) {
+        const deltaX = event.clientX - panStartX;
+        const deltaY = event.clientY - panStartY;
+        viewOffsetX += deltaX;
+        viewOffsetY += deltaY;
+        clampPan();
+        panStartX = event.clientX;
+        panStartY = event.clientY;
+        updateStatusBar();
+        draw();
+        return;
+    }
+
     const cell = getCanvasCell(event);
     if (cell) {
         const movedCell = cell.col !== hoverCol || cell.row !== hoverRow;
@@ -535,13 +705,60 @@ canvas.addEventListener('mousemove', (event) => {
 
 window.addEventListener('mouseup', () => {
     isPainting = false;
+    if (isPanning) {
+        isPanning = false;
+        updateCursorStyle();
+    }
 });
 
 canvas.addEventListener('mouseleave', () => {
+    if (isPanning) {
+        isPanning = false;
+        updateCursorStyle();
+    }
     hoverCol = null;
     hoverRow = null;
     updateStatusText(null, null);
     draw();
+});
+
+// Wheel zoom
+canvas.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    
+    const factor = event.deltaY < 0 ? 1.1 : (1 / 1.1);
+    const newScale = viewScale * factor;
+    
+    // Clamp scale between 0.25 and 4.0
+    if (newScale < 0.25 || newScale > 4.0) return;
+    
+    // Zoom toward mouse cursor (keep point under cursor fixed)
+    viewOffsetX = mouseX - (mouseX - viewOffsetX) * factor;
+    viewOffsetY = mouseY - (mouseY - viewOffsetY) * factor;
+    viewScale = newScale;
+    
+    clampPan();
+    updateStatusBar();
+    draw();
+}, { passive: false });
+
+// Space key for pan mode
+window.addEventListener('keydown', (event) => {
+    if (event.key === ' ') {
+        spaceHeld = true;
+        updateCursorStyle();
+    }
+});
+
+window.addEventListener('keyup', (event) => {
+    if (event.key === ' ') {
+        spaceHeld = false;
+        updateCursorStyle();
+    }
 });
 
 window.addEventListener('load', () => {
@@ -686,6 +903,106 @@ function dismissToast(toast) {
     toast.style.opacity = '0';
     toast.style.transform = 'translateX(110%)';
     setTimeout(() => toast.remove(), 320);
+}
+
+// --- Paint ---
+function paintCell(col, row) {
+    if (row < 0 || row >= MAP_ROWS || col < 0 || col >= MAP_COLS) return;
+    if (activeTool === 'brush') {
+        mapData[row][col] = selectedTileId;
+    } else if (activeTool === 'eraser') {
+        mapData[row][col] = 0;
+    }
+}
+
+// --- Undo/Redo Functions ---
+function saveHistory() {
+    // Push a deep copy of current mapData onto undoStack
+    const snapshot = mapData.map(row => [...row]);
+    undoStack.push(snapshot);
+    
+    // Clear redoStack (new action breaks redo chain)
+    redoStack = [];
+    
+    // Keep max 50 entries
+    if (undoStack.length > 50) {
+        undoStack.shift();
+    }
+    
+    updateUndoRedoButtons();
+}
+
+function undo() {
+    if (undoStack.length === 0) {
+        showToast('Nothing to undo', 'warning');
+        return;
+    }
+    
+    // Push current mapData snapshot onto redoStack
+    const currentSnapshot = mapData.map(row => [...row]);
+    redoStack.push(currentSnapshot);
+    
+    // Pop last entry from undoStack and restore mapData from it
+    const previousSnapshot = undoStack.pop();
+    for (let r = 0; r < MAP_ROWS; r++) {
+        for (let c = 0; c < MAP_COLS; c++) {
+            mapData[r][c] = previousSnapshot[r][c];
+        }
+    }
+    
+    draw();
+    updateUndoRedoButtons();
+}
+
+function redo() {
+    if (redoStack.length === 0) {
+        showToast('Nothing to redo', 'warning');
+        return;
+    }
+    
+    // Push current mapData snapshot onto undoStack
+    const currentSnapshot = mapData.map(row => [...row]);
+    undoStack.push(currentSnapshot);
+    
+    // Pop last entry from redoStack and restore mapData from it
+    const nextSnapshot = redoStack.pop();
+    for (let r = 0; r < MAP_ROWS; r++) {
+        for (let c = 0; c < MAP_COLS; c++) {
+            mapData[r][c] = nextSnapshot[r][c];
+        }
+    }
+    
+    draw();
+    updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('toolbar-btn-undo');
+    const redoBtn = document.getElementById('toolbar-btn-redo');
+    
+    if (undoBtn) {
+        if (undoStack.length === 0) {
+            undoBtn.style.opacity = '0.4';
+            undoBtn.style.cursor = 'not-allowed';
+            undoBtn.disabled = true;
+        } else {
+            undoBtn.style.opacity = '1';
+            undoBtn.style.cursor = 'pointer';
+            undoBtn.disabled = false;
+        }
+    }
+    
+    if (redoBtn) {
+        if (redoStack.length === 0) {
+            redoBtn.style.opacity = '0.4';
+            redoBtn.style.cursor = 'not-allowed';
+            redoBtn.disabled = true;
+        } else {
+            redoBtn.style.opacity = '1';
+            redoBtn.style.cursor = 'pointer';
+            redoBtn.disabled = false;
+        }
+    }
 }
 
 // --- Image → Tilemap Conversion ---
@@ -837,6 +1154,9 @@ function importMapImage() {
         reader.onload = (evt) => {
             const img = new Image();
             img.onload = () => {
+                // Save history BEFORE processing image
+                saveHistory();
+
                 // Off-screen canvas — never shown to user
                 const offCanvas = document.createElement('canvas');
                 const mapPixelW = MAP_COLS * CELL_SIZE;
@@ -940,6 +1260,9 @@ function loadMap() {
 
                 const layer = data.layers[0].data;
 
+                // Save history BEFORE restoring mapData
+                saveHistory();
+
                 // Restore mapData in-place (keep MAP_ROWS x MAP_COLS bounds)
                 for (let r = 0; r < MAP_ROWS; r++) {
                     for (let c = 0; c < MAP_COLS; c++) {
@@ -962,6 +1285,104 @@ function loadMap() {
     input.click();
 }
 
+// --- Zoom Control Functions ---
+function zoomIn() {
+    const factor = 1.25;
+    const newScale = viewScale * factor;
+    
+    if (newScale > 4.0) return;
+    
+    // Zoom toward canvas center
+    const centerX = canvasW / 2;
+    const centerY = canvasH / 2;
+    viewOffsetX = centerX - (centerX - viewOffsetX) * factor;
+    viewOffsetY = centerY - (centerY - viewOffsetY) * factor;
+    viewScale = newScale;
+    
+    clampPan();
+    updateStatusBar();
+    draw();
+}
+
+function zoomOut() {
+    const factor = 1 / 1.25;
+    const newScale = viewScale * factor;
+    
+    if (newScale < 0.25) return;
+    
+    // Zoom toward canvas center
+    const centerX = canvasW / 2;
+    const centerY = canvasH / 2;
+    viewOffsetX = centerX - (centerX - viewOffsetX) * factor;
+    viewOffsetY = centerY - (centerY - viewOffsetY) * factor;
+    viewScale = newScale;
+    
+    clampPan();
+    updateStatusBar();
+    draw();
+}
+
+function resetZoom() {
+    viewOffsetX = 0;
+    viewOffsetY = 0;
+    viewScale = 1.0;
+    updateStatusBar();
+    draw();
+}
+
+function resizeMap(newCols, newRows) {
+    // Validate
+    if (
+        !Number.isInteger(newCols) || !Number.isInteger(newRows) ||
+        newCols < 10 || newCols > 200 ||
+        newRows < 10 || newRows > 200
+    ) {
+        showToast('Invalid map size. Min 10 × 10, Max 200 × 200.', 'error', 3000);
+        return;
+    }
+
+    // Save current state for undo
+    saveHistory();
+
+    // Build new mapData: copy overlapping region, fill new cells with 0
+    const newData = Array.from({ length: newRows }, (_, r) =>
+        Array.from({ length: newCols }, (_, c) =>
+            (r < MAP_ROWS && c < MAP_COLS) ? mapData[r][c] : 0
+        )
+    );
+
+    // Apply new dimensions
+    MAP_COLS = newCols;
+    MAP_ROWS = newRows;
+    mapData  = newData;
+
+    // Sync input field values
+    const colInput = document.getElementById('input-map-cols');
+    const rowInput = document.getElementById('input-map-rows');
+    if (colInput) colInput.value = MAP_COLS;
+    if (rowInput) rowInput.value = MAP_ROWS;
+
+    // Re-render
+    resizeCanvas();
+    draw();
+
+    showToast(`Map resized to ${MAP_COLS} × ${MAP_ROWS}`, 'success', 2000);
+}
+
+// Enter key on map size inputs triggers Apply
+['input-map-cols', 'input-map-rows'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            resizeMap(
+                parseInt(document.getElementById('input-map-cols').value),
+                parseInt(document.getElementById('input-map-rows').value)
+            );
+        }
+    });
+});
+
 // Initial render
 renderPalette();
 
@@ -971,6 +1392,23 @@ window.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         saveMap();
+        return;
+    }
+
+    // Undo/Redo shortcuts (work even inside input fields)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+            redo();  // Ctrl+Shift+Z or Cmd+Shift+Z → Redo
+        } else {
+            undo();  // Ctrl+Z or Cmd+Z → Undo
+        }
+        return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();  // Ctrl+Y or Cmd+Y → Redo
         return;
     }
 
@@ -996,6 +1434,77 @@ function closeFileMenu() {
     const dropdown = document.getElementById('file-menu-dropdown');
     if (dropdown) dropdown.classList.add('hidden');
 }
+
+// --- Properties Panel Drag Handle ---
+(function () {
+    const handle   = document.getElementById('properties-drag-handle');
+    const panel    = document.getElementById('properties-panel');
+    const aside    = panel ? panel.closest('aside') : null;
+
+    if (!handle || !panel || !aside) return;
+
+    let isDragging = false;
+    let startY     = 0;
+    let startH     = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startY     = e.clientY;
+        startH     = panel.getBoundingClientRect().height;
+        handle.classList.add('dragging');
+
+        // Prevent text selection while dragging
+        document.body.style.userSelect    = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        // Dragging UP increases Properties panel height
+        const delta  = startY - e.clientY;
+        const asideH = aside.getBoundingClientRect().height;
+
+        const minH = 80;
+        const maxH = Math.floor(asideH * 0.75);  // max 75% of sidebar height
+
+        const newH = Math.min(maxH, Math.max(minH, startH + delta));
+        panel.style.height = newH + 'px';
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.userSelect    = '';
+        document.body.style.webkitUserSelect = '';
+    });
+
+    // Touch support (mobile / tablet)
+    handle.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        startY     = e.touches[0].clientY;
+        startH     = panel.getBoundingClientRect().height;
+        handle.classList.add('dragging');
+        e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const delta  = startY - e.touches[0].clientY;
+        const asideH = aside.getBoundingClientRect().height;
+        const minH   = 80;
+        const maxH   = Math.floor(asideH * 0.75);
+        const newH   = Math.min(maxH, Math.max(minH, startH + delta));
+        panel.style.height = newH + 'px';
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+        isDragging = false;
+        handle.classList.remove('dragging');
+    });
+})();
 
 // Close file menu when clicking outside
 document.addEventListener('click', (e) => {
