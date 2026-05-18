@@ -114,7 +114,36 @@
 <div class="flex items-center gap-gutter">
 <span class="font-headline-md text-headline-md font-bold text-primary">Another World Map Editor</span>
 <nav class="ml-8 flex gap-4">
-<button class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-variant transition-colors px-2 py-1 rounded">File</button>
+<div class="relative" id="file-menu-wrapper">
+  <button
+    id="file-menu-btn"
+    onclick="toggleFileMenu()"
+    class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-variant transition-colors px-2 py-1 rounded">
+    File
+  </button>
+  <div id="file-menu-dropdown"
+    class="hidden absolute left-0 top-full mt-1 w-52 bg-surface-container border border-outline-variant rounded shadow-[0_4px_24px_rgba(0,0,0,0.5)] z-[200] py-1">
+    <button onclick="loadMap(); closeFileMenu()"
+      class="w-full text-left px-4 py-2 text-body-sm text-on-surface hover:bg-surface-container-high flex items-center gap-3">
+      <span class="material-symbols-outlined text-[16px] text-on-surface-variant">folder_open</span>Open…
+    </button>
+    <button onclick="saveMap(); closeFileMenu()"
+      class="w-full text-left px-4 py-2 text-body-sm text-on-surface hover:bg-surface-container-high flex items-center gap-3">
+      <span class="material-symbols-outlined text-[16px] text-on-surface-variant">save</span>Save
+      <span class="ml-auto text-[11px] text-on-surface-variant">Ctrl+S</span>
+    </button>
+    <div class="h-px bg-outline-variant my-1"></div>
+    <button onclick="importMapImage(); closeFileMenu()"
+      class="w-full text-left px-4 py-2 text-body-sm text-on-surface hover:bg-surface-container-high flex items-center gap-3">
+      <span class="material-symbols-outlined text-[16px] text-on-surface-variant">image_search</span>Import Map Image
+    </button>
+    <button onclick="closeFileMenu()"
+      class="w-full text-left px-4 py-2 text-body-sm text-on-surface-variant hover:bg-surface-container-high flex items-center gap-3 opacity-50 cursor-not-allowed">
+      <span class="material-symbols-outlined text-[16px]">download</span>Export TMX
+      <span class="ml-auto text-[10px]">Step 6</span>
+    </button>
+  </div>
+</div>
 <button class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-variant transition-colors px-2 py-1 rounded">Edit</button>
 <button class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-variant transition-colors px-2 py-1 rounded">Selection</button>
 <button class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-variant transition-colors px-2 py-1 rounded">View</button>
@@ -122,18 +151,34 @@
 </div>
 <div class="flex items-center gap-2">
 <div class="flex border-r border-outline-variant pr-4 mr-4 gap-1">
-<button class="w-8 h-8 flex items-center justify-center rounded text-primary hover:bg-surface-variant cursor-pointer active:scale-95 transition-colors">
-<span class="material-symbols-outlined" data-icon="brush">brush</span>
-</button>
-<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-variant cursor-pointer active:scale-95 transition-colors">
-<span class="material-symbols-outlined" data-icon="eraser">Eraser</span>
-</button>
-<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-variant cursor-pointer active:scale-95 transition-colors">
-<span class="material-symbols-outlined" data-icon="format_color_fill">format_color_fill</span>
-</button>
-<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-variant cursor-pointer active:scale-95 transition-colors">
-<span class="material-symbols-outlined" data-icon="grid_on">grid_on</span>
-</button>
+  <button
+    id="tool-btn-brush"
+    onclick="setActiveTool('brush')"
+    title="Brush (B)"
+    class="w-8 h-8 flex items-center justify-center rounded text-primary bg-secondary-container/30 border-l-2 border-primary shadow-[0_0_8px_#4edea3] cursor-pointer active:scale-95 transition-all duration-150">
+    <span class="material-symbols-outlined" data-icon="brush">brush</span>
+  </button>
+  <button
+    id="tool-btn-eraser"
+    onclick="setActiveTool('eraser')"
+    title="Eraser (E)"
+    class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high cursor-pointer active:scale-95 transition-all duration-150">
+    <span class="material-symbols-outlined" data-icon="ink_eraser">ink_eraser</span>
+  </button>
+  <button
+    id="tool-btn-fill"
+    onclick="setActiveTool('fill')"
+    title="Fill (F)"
+    class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high cursor-pointer active:scale-95 transition-all duration-150">
+    <span class="material-symbols-outlined" data-icon="format_color_fill">format_color_fill</span>
+  </button>
+  <button
+    id="tool-btn-select"
+    onclick="setActiveTool('select')"
+    title="Select (S)"
+    class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high cursor-pointer active:scale-95 transition-all duration-150">
+    <span class="material-symbols-outlined" data-icon="crop_square">crop_square</span>
+  </button>
 </div>
 <button class="px-4 py-1.5 bg-primary-container text-on-primary-container font-mono-label text-mono-label font-bold rounded cursor-pointer active:scale-95 hover:shadow-[0_0_8px_#10b981]">Export</button>
 </div>
@@ -160,34 +205,17 @@
   </button>
 </div>
 <div class="p-4 overflow-y-auto custom-scrollbar flex-1">
-<div class="grid grid-cols-4 gap-2">
-<!-- Tile Item -->
-<div class="aspect-square bg-surface-container-lowest border-2 border-primary shadow-[0_0_8px_#10b981] cursor-pointer">
-<img alt="Selected grass tile" class="w-full h-full object-cover" data-alt="A macro digital texture of vibrant green pixel-art grass blades for a top-down RPG map. The style is crisp and detailed with high contrast, using an emerald green palette to match a professional dark-themed game editor. The lighting is uniform and flat to serve as a repeatable terrain tile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyIfRr954_DL_S_T5sJYCTmol9cNREB80WltiZLprUie8A-hGjeWI7OsPqIzg-81FOp8DNNxHm939J47lrtV8njMxOTXJLPQ3XUr4wVlTgwMerXWaOWwfOLbCHlFdyu8Iym-QcxuzKdZN-l4-46xSCra__XHpmN22ZS_nMpPTSrQRgfb-gs4tBXuWGPNrtzVcC1gtks8-Z04c6PSxeImmpXGZGqwqDT_t-rja0dBSf-WJM4Dev9OVo9X2RR-LssxeDlL4vAiF2RtE"/>
-</div>
-<!-- Mock Tiles -->
-<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group">
-<img alt="Stone tile" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" data-alt="A digital asset tile showing a grey cobblestone path texture with dark recessed grout lines. The aesthetic is clean and industrial, designed for an RPG world map system. The lighting is soft and top-down, maintaining a professional high-contrast dark mode feel with subtle violet undertones in the shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuADTa5UVuOaH-ZJj4Ez0t8hnIhUF8NwgqIhOCjyMck1kondKvn-dZkUeqU65IKXiiRlQXUU9_Myx8-MFRc8tThWQRBx9Xk4YUZ05UHIfVS-sxvVEOvvZRI7j2nxbxj70t-09ioy_OVcspXIiR1qUBEoV2yujuS3Vpa4YL0_2Qe2EEoHuE8pb6xQBsjmtlRDw7_ah-JkKNhmPAXujyWROGW4hz_iphRLVz-0Pmvqw_DXvBbSlOb1MlsgGNP-hSpNizSj3kpoLEq6-cY"/>
-</div>
-<!-- Repeating mock items for grid -->
-<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
-<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
-<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
-<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
-<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
-<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
-<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
-<div class="aspect-square bg-surface-container-lowest border border-outline-variant hover:border-primary transition-colors cursor-pointer group"><div class="w-full h-full bg-surface-variant opacity-50 flex items-center justify-center"><span class="material-symbols-outlined text-xs" data-icon="image">image</span></div></div>
+<div id="tile-palette-grid" class="grid grid-cols-3 gap-2">
 </div>
 <div class="mt-8">
 <h3 class="text-[10px] uppercase font-bold text-on-surface-variant mb-4 tracking-wider">Active Tool</h3>
 <div class="bg-surface-container-high rounded p-3 flex items-center gap-3 border border-outline-variant">
 <div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary">
-<span class="material-symbols-outlined" data-icon="brush">brush</span>
+<span id="active-tool-icon" class="material-symbols-outlined" data-icon="brush">brush</span>
 </div>
 <div>
-<p class="font-mono-label text-on-surface leading-tight">Paint Brush</p>
-<p class="text-[10px] text-on-surface-variant">Size: 1x1 Tile</p>
+<p id="active-tool-label" class="font-mono-label text-on-surface leading-tight">Grass Tile</p>
+<p id="active-tool-sub" class="text-[10px] text-on-surface-variant">ID: 1 · Size: 1×1</p>
 </div>
 </div>
 </div>
@@ -270,10 +298,12 @@
 </div>
 </aside>
 </main>
+<!-- Toast Container -->
+<div id="toast-container" class="fixed bottom-10 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 <!-- Footer / Status Bar Shell -->
 <footer class="bg-surface-container-lowest text-tertiary font-mono-data text-mono-data docked full-width bottom-0 h-[32px] border-t border-outline-variant w-full flex items-center justify-between px-gutter z-50">
 <div class="flex items-center gap-6">
-<span class="text-on-surface-variant">X: 12, Y: 08 | Zoom: 100% | Layer: Ground_01</span>
+<span id="status-bar" class="text-on-surface-variant">X: --, Y: -- | Zoom: 100% | Layer: Ground_01</span>
 <span class="flex items-center gap-1 text-tertiary">
 <span class="material-symbols-outlined text-[14px]" data-icon="memory">memory</span>
 <span>RAM: 245MB</span>
@@ -291,45 +321,228 @@ const CELL_SIZE = 32;
 const MAP_COLS = 40;
 const MAP_ROWS = 30;
 const mapData = Array.from({length: MAP_ROWS}, () => Array(MAP_COLS).fill(0));
+const TILE_COLORS = {
+    0: null,
+    1: { color: 'rgba(52, 120, 52, 0.85)',   label: 'Grass',    icon: 'landscape'  },
+    2: { color: 'rgba(180, 140, 70, 0.85)',   label: 'Dirt',     icon: 'terrain'    },
+    3: { color: 'rgba(28,  90, 180, 0.85)',   label: 'Water',    icon: 'water'      },
+    4: { color: 'rgba(110, 110, 120, 0.85)',  label: 'Mountain', icon: 'filter_hdr' },
+    5: { color: 'rgba(30,  80,  40, 0.85)',   label: 'Forest',   icon: 'park'       },
+    6: { color: 'rgba(195, 165, 75, 0.85)',   label: 'Desert',   icon: 'wb_sunny'   }
+};
+let selectedTileId = 1;
+let activeTool = 'brush';   // options: 'brush' | 'eraser' | 'fill' | 'select'
+let canvasW = 0;
+let canvasH = 0;
 
 const canvas = document.getElementById('map-canvas');
 const ctx = canvas.getContext('2d');
+let isPainting = false;
+let hoverCol = null;
+let hoverRow = null;
+const statusSpan = document.getElementById('status-bar');
+
+function padCell(value) {
+    return String(value).padStart(2, '0');
+}
+
+function updateStatusText(col, row) {
+    if (!statusSpan) return;
+    const xText = col != null ? padCell(col) : '--';
+    const yText = row != null ? padCell(row) : '--';
+    statusSpan.textContent = `X: ${xText}, Y: ${yText} | Zoom: 100% | Layer: Ground_01`;
+}
+
+function getCanvasCell(event) {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const col = Math.floor(x / CELL_SIZE);
+    const row = Math.floor(y / CELL_SIZE);
+
+    if (col < 0 || col >= MAP_COLS || row < 0 || row >= MAP_ROWS) {
+        return null;
+    }
+
+    return { col, row };
+}
 
 function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
     const section = canvas.parentElement;
-    const w = section.clientWidth;
-    const h = section.clientHeight;
 
-    // Set internal resolution (actual pixels)
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
+    canvasW = section.clientWidth;
+    canvasH = section.clientHeight;
 
-    // Set display size via inline style
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
+    // Physical pixel resolution
+    canvas.width = canvasW * dpr;
+    canvas.height = canvasH * dpr;
 
-    // Scale context to match DPR so drawing coordinates stay in CSS pixels
+    // Display size in CSS pixels
+    canvas.style.width = canvasW + 'px';
+    canvas.style.height = canvasH + 'px';
+
+    // Scale context so all drawing uses CSS pixel coordinates
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Clear using CSS pixel dimensions (coordinate system after setTransform)
+    ctx.clearRect(0, 0, canvasW, canvasH);
+
+    // Paint existing cells using TILE_COLORS
+    for (let row = 0; row < MAP_ROWS; row++) {
+        for (let col = 0; col < MAP_COLS; col++) {
+            const tileId = mapData[row][col];
+            if (tileId !== 0 && TILE_COLORS[tileId]) {
+                ctx.fillStyle = TILE_COLORS[tileId].color;
+                ctx.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+        }
+    }
+
+    // Hover preview
+    if (hoverCol !== null && hoverRow !== null) {
+        // Eraser shows red tint, all other tools show emerald
+        if (activeTool === 'eraser') {
+            ctx.fillStyle = 'rgba(248, 113, 113, 0.25)';
+        } else {
+            ctx.fillStyle = 'rgba(78, 222, 163, 0.15)';
+        }
+        ctx.fillRect(hoverCol * CELL_SIZE, hoverRow * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+    }
+
+    // Grid lines on top
     ctx.strokeStyle = 'rgba(16, 185, 129, 0.08)';
     ctx.lineWidth = 1;
-    for (let x = 0; x <= canvas.width; x += CELL_SIZE) {
+    for (let x = 0; x <= canvasW; x += CELL_SIZE) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
+        ctx.lineTo(x, canvasH);
         ctx.stroke();
     }
-    for (let y = 0; y <= canvas.height; y += CELL_SIZE) {
+
+    for (let y = 0; y <= canvasH; y += CELL_SIZE) {
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
+        ctx.lineTo(canvasW, y);
         ctx.stroke();
     }
 }
+
+function paintCell(col, row) {
+    if (row < 0 || row >= MAP_ROWS || col < 0 || col >= MAP_COLS) return;
+    if (activeTool === 'brush') {
+        mapData[row][col] = selectedTileId;
+    } else if (activeTool === 'eraser') {
+        mapData[row][col] = 0;
+    }
+}
+
+function setActiveTool(tool) {
+    activeTool = tool;
+
+    // Update toolbar button styles
+    const toolButtons = {
+        brush:  document.getElementById('tool-btn-brush'),
+        eraser: document.getElementById('tool-btn-eraser'),
+        fill:   document.getElementById('tool-btn-fill'),
+        select: document.getElementById('tool-btn-select')
+    };
+
+    Object.entries(toolButtons).forEach(([name, btn]) => {
+        if (!btn) return;
+        if (name === tool) {
+            // Active state: emerald tint + left border glow
+            btn.classList.add(
+                'text-primary',
+                'bg-secondary-container/30',
+                'border-l-2',
+                'border-primary',
+                'shadow-[0_0_8px_#4edea3]'
+            );
+            btn.classList.remove('text-on-surface-variant');
+        } else {
+            // Default state
+            btn.classList.remove(
+                'text-primary',
+                'bg-secondary-container/30',
+                'border-l-2',
+                'border-primary',
+                'shadow-[0_0_8px_#4edea3]'
+            );
+            btn.classList.add('text-on-surface-variant');
+        }
+    });
+
+    // Update Active Tool section in left sidebar
+    const toolMeta = {
+        brush:  { label: (TILE_COLORS[selectedTileId]?.label ?? 'Tile') + ' Tile', sub: 'ID: ' + selectedTileId + ' · Size: 1×1', icon: 'brush'           },
+        eraser: { label: 'Eraser',    sub: 'Clears selected cell',                  icon: 'ink_eraser'     },
+        fill:   { label: 'Fill',      sub: 'Flood fill (coming soon)',               icon: 'format_color_fill' },
+        select: { label: 'Select',    sub: 'Rectangle selection',                   icon: 'crop_square'    }
+    };
+
+    const meta = toolMeta[tool];
+    if (!meta) return;
+
+    const toolLabel   = document.getElementById('active-tool-label');
+    const toolSub     = document.getElementById('active-tool-sub');
+    const toolIconEl  = document.getElementById('active-tool-icon');
+
+    if (toolLabel)  toolLabel.textContent  = meta.label;
+    if (toolSub)    toolSub.textContent    = meta.sub;
+    if (toolIconEl) toolIconEl.textContent = meta.icon;
+}
+
+canvas.addEventListener('mousedown', (event) => {
+    const cell = getCanvasCell(event);
+    if (!cell) return;
+
+    isPainting = true;
+    paintCell(cell.col, cell.row);
+    hoverCol = cell.col;
+    hoverRow = cell.row;
+    updateStatusText(cell.col, cell.row);
+    draw();
+});
+
+canvas.addEventListener('mousemove', (event) => {
+    const cell = getCanvasCell(event);
+    if (cell) {
+        const movedCell = cell.col !== hoverCol || cell.row !== hoverRow;
+        hoverCol = cell.col;
+        hoverRow = cell.row;
+        updateStatusText(cell.col, cell.row);
+
+        if (isPainting) {
+            paintCell(cell.col, cell.row);
+        }
+
+        if (movedCell || isPainting) {
+            draw();
+        }
+        return;
+    }
+
+    if (hoverCol !== null || hoverRow !== null) {
+        hoverCol = null;
+        hoverRow = null;
+        updateStatusText(null, null);
+        draw();
+    }
+});
+
+window.addEventListener('mouseup', () => {
+    isPainting = false;
+});
+
+canvas.addEventListener('mouseleave', () => {
+    hoverCol = null;
+    hoverRow = null;
+    updateStatusText(null, null);
+    draw();
+});
 
 window.addEventListener('load', () => {
     resizeCanvas();
@@ -339,6 +552,457 @@ window.addEventListener('load', () => {
 window.addEventListener('resize', () => {
     resizeCanvas();
     draw();
+});
+
+// --- Tile Palette Rendering ---
+function renderPalette() {
+    const grid = document.getElementById('tile-palette-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    Object.entries(TILE_COLORS).forEach(([idStr, tile]) => {
+        const id = Number(idStr);
+        if (id === 0 || !tile) return;
+
+        const isSelected = id === selectedTileId;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = [
+            'flex flex-col items-center gap-1 cursor-pointer rounded p-1',
+            'transition-all duration-150',
+            isSelected
+                ? 'ring-2 ring-primary shadow-[0_0_8px_#4edea3] scale-105 bg-surface-container-high'
+                : 'hover:bg-surface-container-high'
+        ].join(' ');
+        wrapper.dataset.tileId = id;
+
+        const swatch = document.createElement('div');
+        swatch.className = 'w-full aspect-square rounded-sm border border-outline-variant flex items-center justify-center';
+        swatch.style.backgroundColor = tile.color;
+
+        const icon = document.createElement('span');
+        icon.className = 'material-symbols-outlined text-white/70';
+        icon.style.fontSize = '18px';
+        icon.textContent = tile.icon;
+        swatch.appendChild(icon);
+
+        const label = document.createElement('span');
+        label.className = 'text-[10px] font-mono-label text-on-surface-variant text-center leading-tight';
+        label.textContent = tile.label;
+
+        wrapper.appendChild(swatch);
+        wrapper.appendChild(label);
+
+        wrapper.addEventListener('click', () => {
+            selectedTileId = id;
+            if (activeTool !== 'brush') {
+                setActiveTool('brush');
+            }
+            renderPalette();
+            updateActiveToolLabel();
+        });
+
+        grid.appendChild(wrapper);
+    });
+}
+
+function updateActiveToolLabel() {
+    const tile = TILE_COLORS[selectedTileId];
+    if (!tile) return;
+
+    const toolLabel = document.querySelector('#active-tool-label');
+    const toolSub   = document.querySelector('#active-tool-sub');
+    if (toolLabel) toolLabel.textContent = tile.label + ' Tile';
+    if (toolSub)   toolSub.textContent   = 'ID: ' + selectedTileId + ' · Size: 1×1';
+}
+
+// --- Toast Notification ---
+function showToast(message, type = 'success', duration = 2500) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const borderColors = {
+        success: '#4edea3',
+        warning: '#facc15',
+        error:   '#f87171'
+    };
+    const icons = {
+        success: 'check_circle',
+        warning: 'warning',
+        error:   'error'
+    };
+
+    const toast = document.createElement('div');
+    toast.style.cssText = [
+        'display:flex',
+        'align-items:center',
+        'gap:10px',
+        'min-width:260px',
+        'padding:12px 16px',
+        'background:#221d2e',
+        'border-radius:8px',
+        'border-left:3px solid ' + (borderColors[type] ?? borderColors.success),
+        'box-shadow:0 4px 24px rgba(0,0,0,0.5)',
+        'pointer-events:auto',
+        'transform:translateX(110%)',
+        'transition:transform 200ms ease-out, opacity 300ms ease-in',
+        'opacity:1'
+    ].join(';');
+
+    const iconEl = document.createElement('span');
+    iconEl.className = 'material-symbols-outlined';
+    iconEl.style.cssText = 'font-size:18px;color:' + (borderColors[type] ?? borderColors.success) + ';flex-shrink:0';
+    iconEl.textContent = icons[type] ?? icons.success;
+
+    const msgEl = document.createElement('span');
+    msgEl.style.cssText = 'font-size:14px;color:#e9def6;flex:1;line-height:1.4';
+    msgEl.textContent = message;
+
+    const closeBtn = document.createElement('span');
+    closeBtn.className = 'material-symbols-outlined';
+    closeBtn.style.cssText = 'font-size:16px;color:#86948a;cursor:pointer;flex-shrink:0';
+    closeBtn.textContent = 'close';
+    closeBtn.addEventListener('click', () => dismissToast(toast));
+
+    toast.appendChild(iconEl);
+    toast.appendChild(msgEl);
+    toast.appendChild(closeBtn);
+    container.appendChild(toast);
+
+    // Slide in
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateX(0)';
+        });
+    });
+
+    // Auto dismiss
+    const timer = setTimeout(() => dismissToast(toast), duration);
+    toast._timer = timer;
+}
+
+function dismissToast(toast) {
+    clearTimeout(toast._timer);
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(110%)';
+    setTimeout(() => toast.remove(), 320);
+}
+
+// --- Image → Tilemap Conversion ---
+
+function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h, s;
+    const l = (max + min) / 2;
+
+    if (max === min) {
+        h = s = 0;
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+            case g: h = ((b - r) / d + 2) / 6; break;
+            case b: h = ((r - g) / d + 4) / 6; break;
+        }
+    }
+    // Return H in degrees (0-360), S and L as percentages (0-100)
+    return [h * 360, s * 100, l * 100];
+}
+
+function classifyPixel(r, g, b, a) {
+    // Transparent → empty
+    if (a < 30) return 0;
+
+    const [h, s, l] = rgbToHsl(r, g, b);
+
+    // Very dark areas → empty/shadow
+    if (l < 10) return 0;
+
+    // Water: blue/teal hues, moderately saturated
+    // Averaged blue may be less saturated — lower threshold slightly
+    if (h >= 185 && h <= 270 && s > 18) return 3;
+
+    // Snow-capped Mountain: very low saturation, high lightness
+    if (s < 15 && l > 60) return 4;
+
+    // Rocky Mountain: grey tones, mid lightness
+    if (s < 22 && l >= 38 && l <= 62) return 4;
+
+    // Forest: deep/mid green, can be darker after averaging
+    if (h >= 85 && h <= 168 && s > 22 && l >= 12 && l <= 55) return 5;
+
+    // Grass: lighter/yellower green
+    if (h >= 55 && h <= 145 && s > 16 && l > 38) return 1;
+
+    // Desert: warm sandy yellow, bright — averaged tone may shift warmer
+    if (h >= 25 && h <= 62 && s > 18 && l > 50) return 6;
+
+    // Dirt: warm brown/tan — averaged may land here often
+    if (h >= 18 && h <= 58 && s > 12 && l >= 22 && l <= 58) return 2;
+
+    // Warm mid tones not caught above → Dirt
+    if (h >= 10 && h <= 65 && l >= 30 && l <= 65) return 2;
+
+    // Fallback → Grass
+    return 1;
+}
+
+function sampleCellColor(offCtx, col, row) {
+    // Sample a SAMPLE_GRID x SAMPLE_GRID grid of pixels within the cell
+    // and return the average RGB values — much more robust than single-pixel sampling
+
+    const SAMPLE_GRID = 3;   // 3x3 = 9 sample points per cell
+    const step = CELL_SIZE / (SAMPLE_GRID + 1);   // evenly spaced, avoiding edges
+
+    let totalR = 0, totalG = 0, totalB = 0, totalA = 0;
+    let count = 0;
+
+    for (let sy = 1; sy <= SAMPLE_GRID; sy++) {
+        for (let sx = 1; sx <= SAMPLE_GRID; sx++) {
+            const px = Math.floor(col * CELL_SIZE + step * sx);
+            const py = Math.floor(row * CELL_SIZE + step * sy);
+
+            const pixel = offCtx.getImageData(px, py, 1, 1).data;
+
+            // Skip near-transparent pixels — don't let them drag the average down
+            if (pixel[3] < 30) continue;
+
+            totalR += pixel[0];
+            totalG += pixel[1];
+            totalB += pixel[2];
+            totalA += pixel[3];
+            count++;
+        }
+    }
+
+    if (count === 0) {
+        // All pixels were transparent → return transparent
+        return { r: 0, g: 0, b: 0, a: 0 };
+    }
+
+    return {
+        r: Math.round(totalR / count),
+        g: Math.round(totalG / count),
+        b: Math.round(totalB / count),
+        a: Math.round(totalA / count)
+    };
+}
+
+function importMapImage() {
+    const input = document.createElement('input');
+    input.type   = 'file';
+    input.accept = 'image/*';
+
+    input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Show processing toast
+        const processingToast = document.createElement('div');
+        processingToast.id = 'processing-toast';
+        processingToast.style.cssText = [
+            'display:flex',
+            'align-items:center',
+            'gap:10px',
+            'min-width:260px',
+            'padding:12px 16px',
+            'background:#221d2e',
+            'border-radius:8px',
+            'border-left:3px solid #4edea3',
+            'box-shadow:0 4px 24px rgba(0,0,0,0.5)',
+            'pointer-events:auto',
+            'opacity:1'
+        ].join(';');
+
+        processingToast.innerHTML = `
+            <span class="material-symbols-outlined" style="font-size:18px;color:#4edea3;flex-shrink:0;animation:spin 1s linear infinite">autorenew</span>
+            <span style="font-size:14px;color:#e9def6;flex:1;line-height:1.4">Analyzing map colors…</span>
+        `;
+
+        // Add spin animation if not already present
+        if (!document.getElementById('spin-style')) {
+            const style = document.createElement('style');
+            style.id = 'spin-style';
+            style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+            document.head.appendChild(style);
+        }
+
+        const container = document.getElementById('toast-container');
+        if (container) container.appendChild(processingToast);
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const img = new Image();
+            img.onload = () => {
+                // Off-screen canvas — never shown to user
+                const offCanvas = document.createElement('canvas');
+                const mapPixelW = MAP_COLS * CELL_SIZE;
+                const mapPixelH = MAP_ROWS * CELL_SIZE;
+                offCanvas.width  = mapPixelW;
+                offCanvas.height = mapPixelH;
+
+                const offCtx = offCanvas.getContext('2d');
+
+                // Scale image to fit map dimensions
+                offCtx.drawImage(img, 0, 0, mapPixelW, mapPixelH);
+
+                // Sample averaged pixel color per cell and classify
+                for (let row = 0; row < MAP_ROWS; row++) {
+                    for (let col = 0; col < MAP_COLS; col++) {
+                        const avg = sampleCellColor(offCtx, col, row);
+                        mapData[row][col] = classifyPixel(
+                            avg.r, avg.g, avg.b, avg.a
+                        );
+                    }
+                }
+
+                // Remove processing toast
+                if (processingToast.parentNode) processingToast.remove();
+
+                // Render result
+                draw();
+
+                showToast(
+                    'Terrain draft generated — refine with brush tools',
+                    'success',
+                    3500
+                );
+            };
+
+            img.onerror = () => {
+                if (processingToast.parentNode) processingToast.remove();
+                showToast('Failed to load image file.', 'error', 4000);
+            };
+
+            img.src = evt.target.result;
+        };
+
+        reader.onerror = () => {
+            if (processingToast.parentNode) processingToast.remove();
+            showToast('Failed to read file.', 'error', 4000);
+        };
+
+        reader.readAsDataURL(file);
+    });
+
+    input.click();
+}
+
+// --- Save / Load ---
+function saveMap() {
+    const payload = {
+        version:  '1.0',
+        appName:  'Another World Map Editor',
+        mapCols:  MAP_COLS,
+        mapRows:  MAP_ROWS,
+        cellSize: CELL_SIZE,
+        layers: [
+            {
+                name: 'Ground_01',
+                data: mapData.map(row => [...row])
+            }
+        ]
+    };
+
+    const json    = JSON.stringify(payload, null, 2);
+    const blob    = new Blob([json], { type: 'application/json' });
+    const url     = URL.createObjectURL(blob);
+    const anchor  = document.createElement('a');
+    anchor.href     = url;
+    anchor.download = 'another-world-map.json';
+    anchor.click();
+    URL.revokeObjectURL(url);
+
+    showToast('Map saved successfully', 'success', 2000);
+}
+
+function loadMap() {
+    const input = document.createElement('input');
+    input.type   = 'file';
+    input.accept = '.json';
+
+    input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const data = JSON.parse(evt.target.result);
+
+                // Validate structure
+                if (!data.layers || !Array.isArray(data.layers) || !data.layers[0]?.data) {
+                    throw new Error('Invalid map format');
+                }
+
+                const layer = data.layers[0].data;
+
+                // Restore mapData in-place (keep MAP_ROWS x MAP_COLS bounds)
+                for (let r = 0; r < MAP_ROWS; r++) {
+                    for (let c = 0; c < MAP_COLS; c++) {
+                        mapData[r][c] = (layer[r] && layer[r][c] != null)
+                            ? Number(layer[r][c])
+                            : 0;
+                    }
+                }
+
+                draw();
+                showToast('Map loaded successfully', 'success', 2000);
+
+            } catch (err) {
+                showToast('Failed to load file. Invalid format.', 'error', 4000);
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    input.click();
+}
+
+// Initial render
+renderPalette();
+
+// Keyboard shortcuts
+window.addEventListener('keydown', (e) => {
+    // Ctrl+S → Save (works even inside input fields)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveMap();
+        return;
+    }
+
+    // Ignore tool shortcuts when typing in an input field
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    switch (e.key.toLowerCase()) {
+        case 'b': setActiveTool('brush');  break;
+        case 'e': setActiveTool('eraser'); break;
+        case 'f': setActiveTool('fill');   break;
+        case 's': setActiveTool('select'); break;
+    }
+});
+
+// --- File Menu Dropdown ---
+function toggleFileMenu() {
+    const dropdown = document.getElementById('file-menu-dropdown');
+    if (!dropdown) return;
+    dropdown.classList.toggle('hidden');
+}
+
+function closeFileMenu() {
+    const dropdown = document.getElementById('file-menu-dropdown');
+    if (dropdown) dropdown.classList.add('hidden');
+}
+
+// Close file menu when clicking outside
+document.addEventListener('click', (e) => {
+    const wrapper = document.getElementById('file-menu-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+        closeFileMenu();
+    }
 });
 </script>
 </body></html>
