@@ -165,14 +165,14 @@
   </button>
   <button
     id="tool-btn-eraser"
-    onclick="setActiveTool('eraser')"
+    onclick="getSelectionBounds() ? eraseSelection() : setActiveTool('eraser')"
     title="Eraser (E)"
     class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high cursor-pointer active:scale-95 transition-all duration-150">
     <span class="material-symbols-outlined" data-icon="ink_eraser">ink_eraser</span>
   </button>
   <button
     id="tool-btn-fill"
-    onclick="setActiveTool('fill')"
+    onclick="getSelectionBounds() ? fillSelection() : setActiveTool('fill')"
     title="Fill (F)"
     class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high cursor-pointer active:scale-95 transition-all duration-150">
     <span class="material-symbols-outlined" data-icon="format_color_fill">format_color_fill</span>
@@ -247,6 +247,23 @@
 <!-- Center Canvas -->
 <section class="flex-1 bg-surface-dim relative overflow-hidden flex items-center justify-center p-0">
 <canvas id="map-canvas" class="bg-[#0f0a1a] shadow-2xl border border-outline-variant"></canvas>
+<canvas
+  id="mini-map"
+  style="
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 160px;
+    height: 120px;
+    border: 1px solid #3c4a42;
+    border-radius: 4px;
+    background: #100b1b;
+    cursor: pointer;
+    opacity: 0.85;
+    z-index: 20;
+  "
+  title="Minimap — click to navigate"
+></canvas>
 <!-- Canvas Floating Controls -->
 <div class="absolute bottom-6 right-6 flex flex-col gap-2">
 <button id="zoom-in-btn" onclick="zoomIn()" class="w-10 h-10 bg-surface-container border border-outline-variant text-on-surface-variant flex items-center justify-center rounded hover:bg-surface-variant cursor-pointer"><span class="material-symbols-outlined">add</span></button>
@@ -344,14 +361,26 @@
 <label class="text-[10px] text-on-surface-variant uppercase">Name</label>
 <input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none" type="text" value="Grass_Tile_04"/>
 </div>
-<div class="grid grid-cols-2 gap-4">
 <div class="space-y-1">
-<label class="text-[10px] text-on-surface-variant uppercase">X Pos</label>
-<input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none text-center" type="text" value="12"/>
-</div>
-<div class="space-y-1">
-<label class="text-[10px] text-on-surface-variant uppercase">Y Pos</label>
-<input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none text-center" type="text" value="08"/>
+<label class="text-[10px] text-on-surface-variant uppercase tracking-wider">Center Position</label>
+<p class="text-[10px] text-on-surface-variant opacity-60">Viewport center in map cells</p>
+<div class="grid grid-cols-2 gap-2">
+  <div class="space-y-1">
+    <label class="text-[10px] text-on-surface-variant">X (col)</label>
+    <input
+      id="input-pos-x"
+      type="number" min="0" placeholder="--"
+      class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none text-center"
+    />
+  </div>
+  <div class="space-y-1">
+    <label class="text-[10px] text-on-surface-variant">Y (row)</label>
+    <input
+      id="input-pos-y"
+      type="number" min="0" placeholder="--"
+      class="w-full bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-on-surface font-mono-label focus:border-primary focus:ring-0 outline-none text-center"
+    />
+  </div>
 </div>
 </div>
 <div class="space-y-1">
@@ -399,6 +428,11 @@ const TILE_COLORS = {
 };
 let selectedTileId = 1;
 let activeTool = 'brush';   // options: 'brush' | 'eraser' | 'fill' | 'select'
+let selStartCol = null;
+let selStartRow = null;
+let selEndCol   = null;
+let selEndRow   = null;
+let isSelecting = false;
 let undoStack = [];         // max 50 entries
 let redoStack = [];         // cleared on new actions
 let canvasW = 0;
@@ -430,6 +464,28 @@ function updateStatusBar(col = hoverCol, row = hoverRow) {
     const yText = row != null ? padCell(row) : '--';
     const zoomText = Math.round(viewScale * 100) + '%';
     statusSpan.textContent = `X: ${xText}, Y: ${yText} | Zoom: ${zoomText} | Layer: Ground_01`;
+}
+
+function getViewportCenterCell() {
+    const col = Math.floor((canvasW / 2 - viewOffsetX) / (CELL_SIZE * viewScale));
+    const row = Math.floor((canvasH / 2 - viewOffsetY) / (CELL_SIZE * viewScale));
+    return {
+        col: Math.max(0, Math.min(MAP_COLS - 1, col)),
+        row: Math.max(0, Math.min(MAP_ROWS - 1, row))
+    };
+}
+
+function updatePropertiesCenter() {
+    const posX = document.getElementById('input-pos-x');
+    const posY = document.getElementById('input-pos-y');
+    if (!posX || !posY) return;
+
+    // Do NOT overwrite while the user is actively typing in either field
+    if (document.activeElement === posX || document.activeElement === posY) return;
+
+    const center = getViewportCenterCell();
+    posX.value = center.col;
+    posY.value = center.row;
 }
 
 function updateStatusText(col, row) {
@@ -530,6 +586,8 @@ function draw() {
         // Eraser shows red tint, all other tools show emerald
         if (activeTool === 'eraser') {
             ctx.fillStyle = 'rgba(248, 113, 113, 0.25)';
+        } else if (activeTool === 'fill') {
+            ctx.fillStyle = 'rgba(250, 204, 21, 0.25)';  // yellow tint for fill
         } else {
             ctx.fillStyle = 'rgba(78, 222, 163, 0.15)';
         }
@@ -554,7 +612,140 @@ function draw() {
         ctx.lineTo(MAP_COLS * CELL_SIZE, y);
         ctx.stroke();
     }
+
+    // Draw selection rectangle
+    const bounds = getSelectionBounds();
+    if (bounds) {
+        const x = bounds.c1 * CELL_SIZE;
+        const y = bounds.r1 * CELL_SIZE;
+        const w = (bounds.c2 - bounds.c1 + 1) * CELL_SIZE;
+        const h = (bounds.r2 - bounds.r1 + 1) * CELL_SIZE;
+
+        // Semi-transparent violet fill
+        ctx.fillStyle = 'rgba(208, 188, 255, 0.2)';
+        ctx.fillRect(x, y, w, h);
+
+        // Dashed violet border
+        ctx.strokeStyle = '#d0bcff';
+        ctx.lineWidth   = 1 / viewScale;
+        ctx.setLineDash([4 / viewScale, 3 / viewScale]);
+        ctx.strokeRect(x, y, w, h);
+        ctx.setLineDash([]);  // Reset dash
+    }
+
+    updatePropertiesCenter();
+    drawMinimap();
 }
+
+function drawMinimap() {
+    const miniCanvas = document.getElementById('mini-map');
+    if (!miniCanvas) return;
+
+    const mCtx    = miniCanvas.getContext('2d');
+    const mW      = miniCanvas.width  = miniCanvas.offsetWidth  * (window.devicePixelRatio || 1);
+    const mH      = miniCanvas.height = miniCanvas.offsetHeight * (window.devicePixelRatio || 1);
+    const dpr     = window.devicePixelRatio || 1;
+
+    // Scale to fit entire map into minimap canvas
+    const scaleX  = mW / (MAP_COLS * CELL_SIZE);
+    const scaleY  = mH / (MAP_ROWS * CELL_SIZE);
+    const mScale  = Math.min(scaleX, scaleY);
+
+    // Offset to center map in minimap if aspect ratios differ
+    const offsetX = (mW - MAP_COLS * CELL_SIZE * mScale) / 2;
+    const offsetY = (mH - MAP_ROWS * CELL_SIZE * mScale) / 2;
+
+    mCtx.clearRect(0, 0, mW, mH);
+
+    // Draw map background
+    mCtx.fillStyle = '#12121f';
+    mCtx.fillRect(offsetX, offsetY, MAP_COLS * CELL_SIZE * mScale, MAP_ROWS * CELL_SIZE * mScale);
+
+    // Draw each non-empty cell
+    for (let row = 0; row < MAP_ROWS; row++) {
+        for (let col = 0; col < MAP_COLS; col++) {
+            const tileId = mapData[row][col];
+            if (tileId !== 0 && TILE_COLORS[tileId]) {
+                mCtx.fillStyle = TILE_COLORS[tileId].color;
+                mCtx.fillRect(
+                    offsetX + col * CELL_SIZE * mScale,
+                    offsetY + row * CELL_SIZE * mScale,
+                    Math.ceil(CELL_SIZE * mScale),
+                    Math.ceil(CELL_SIZE * mScale)
+                );
+            }
+        }
+    }
+
+    // Draw viewport indicator rectangle
+    // Calculate which map area is currently visible in the main canvas
+    const vpLeft   = -viewOffsetX / viewScale;
+    const vpTop    = -viewOffsetY / viewScale;
+    const vpRight  = vpLeft + canvasW / viewScale;
+    const vpBottom = vpTop  + canvasH / viewScale;
+
+    const rx = offsetX + vpLeft  * mScale;
+    const ry = offsetY + vpTop   * mScale;
+    const rw = (vpRight  - vpLeft) * mScale;
+    const rh = (vpBottom - vpTop)  * mScale;
+
+    // Clamp to minimap bounds
+    mCtx.strokeStyle = '#4edea3';
+    mCtx.lineWidth   = 1.5;
+    mCtx.strokeRect(rx, ry, rw, rh);
+
+    // Semi-transparent viewport fill
+    mCtx.fillStyle = 'rgba(78, 222, 163, 0.08)';
+    mCtx.fillRect(rx, ry, rw, rh);
+}
+
+// --- Minimap Navigation ---
+(function () {
+    document.addEventListener('DOMContentLoaded', () => {
+        const miniCanvas = document.getElementById('mini-map');
+        if (!miniCanvas) return;
+
+        function navigateFromMinimap(e) {
+            const rect   = miniCanvas.getBoundingClientRect();
+            const dpr    = window.devicePixelRatio || 1;
+            const mW     = miniCanvas.offsetWidth;
+            const mH     = miniCanvas.offsetHeight;
+
+            const mScale = Math.min(
+                mW / (MAP_COLS * CELL_SIZE),
+                mH / (MAP_ROWS * CELL_SIZE)
+            );
+            const offsetX = (mW - MAP_COLS * CELL_SIZE * mScale) / 2;
+            const offsetY = (mH - MAP_ROWS * CELL_SIZE * mScale) / 2;
+
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            // Convert minimap click to map pixel position
+            const mapPixelX = (clickX - offsetX) / mScale;
+            const mapPixelY = (clickY - offsetY) / mScale;
+
+            // Convert to cell coords and pan
+            const col = Math.floor(mapPixelX / CELL_SIZE);
+            const row = Math.floor(mapPixelY / CELL_SIZE);
+            panToCell(col, row);
+        }
+
+        miniCanvas.addEventListener('click', navigateFromMinimap);
+
+        // Drag on minimap also navigates
+        let miniDragging = false;
+        miniCanvas.addEventListener('mousedown', (e) => {
+            miniDragging = true;
+            navigateFromMinimap(e);
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!miniDragging) return;
+            navigateFromMinimap(e);
+        });
+        window.addEventListener('mouseup', () => { miniDragging = false; });
+    });
+})();
 
 function updateCursorStyle() {
     if (isPanning) {
@@ -578,7 +769,70 @@ function clampPan() {
     viewOffsetY = Math.max(minY, Math.min(maxY, viewOffsetY));
 }
 
+function panToCell(col, row) {
+    // Clamp to valid map bounds
+    col = Math.max(0, Math.min(MAP_COLS - 1, Math.round(col)));
+    row = Math.max(0, Math.min(MAP_ROWS - 1, Math.round(row)));
+
+    // Calculate viewOffset so this cell's center lands at canvas center
+    const targetPixelX = col * CELL_SIZE + CELL_SIZE / 2;
+    const targetPixelY = row * CELL_SIZE + CELL_SIZE / 2;
+
+    viewOffsetX = canvasW / 2 - targetPixelX * viewScale;
+    viewOffsetY = canvasH / 2 - targetPixelY * viewScale;
+
+    draw();
+}
+
+// --- Center Position Input Navigation ---
+(function () {
+    function applyPanFromInputs() {
+        const posX = document.getElementById('input-pos-x');
+        const posY = document.getElementById('input-pos-y');
+        if (!posX || !posY) return;
+
+        const col = parseInt(posX.value);
+        const row = parseInt(posY.value);
+
+        if (isNaN(col) || isNaN(row) || col < 0 || row < 0) {
+            showToast('Invalid coordinates', 'warning', 2000);
+            // Restore current center values
+            updatePropertiesCenter();
+            return;
+        }
+
+        panToCell(col, row);
+    }
+
+    ['input-pos-x', 'input-pos-y'].forEach(id => {
+        // Use event delegation after DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            // Enter key → pan immediately
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    applyPanFromInputs();
+                    el.blur();
+                }
+                // Escape → restore current center without navigating
+                if (e.key === 'Escape') {
+                    updatePropertiesCenter();
+                    el.blur();
+                }
+            });
+
+            // Blur (click away) → pan if value changed
+            el.addEventListener('blur', () => {
+                applyPanFromInputs();
+            });
+        });
+    });
+})();
+
 function setActiveTool(tool) {
+    if (tool !== 'select') clearSelection();
     activeTool = tool;
 
     // Update toolbar button styles
@@ -618,8 +872,8 @@ function setActiveTool(tool) {
     const toolMeta = {
         brush:  { label: (TILE_COLORS[selectedTileId]?.label ?? 'Tile') + ' Tile', sub: 'ID: ' + selectedTileId + ' · Size: 1×1', icon: 'brush'           },
         eraser: { label: 'Eraser',    sub: 'Clears selected cell',                  icon: 'ink_eraser'     },
-        fill:   { label: 'Fill',      sub: 'Flood fill (coming soon)',               icon: 'format_color_fill' },
-        select: { label: 'Select',    sub: 'Rectangle selection',                   icon: 'crop_square'    }
+        fill:   { label: 'Fill',      sub: 'Click to flood fill area',              icon: 'format_color_fill' },
+        select: { label: 'Select',    sub: 'Drag → Enter(fill) Del(erase) Esc(cancel)', icon: 'crop_square' }
     };
 
     const meta = toolMeta[tool];
@@ -653,6 +907,21 @@ canvas.addEventListener('mousedown', (event) => {
 
     if (!cell) return;
 
+    if (activeTool === 'select') {
+        clearSelection();
+        selStartCol = cell.col;
+        selStartRow = cell.row;
+        selEndCol   = cell.col;
+        selEndRow   = cell.row;
+        isSelecting = true;
+        draw();
+        return;
+    }
+
+    if (activeTool === 'fill') {
+        floodFill(cell.col, cell.row);
+        return;
+    }
     // Save history BEFORE making any changes (for entire drag stroke)
     saveHistory();
 
@@ -689,6 +958,12 @@ canvas.addEventListener('mousemove', (event) => {
             paintCell(cell.col, cell.row);
         }
 
+        if (isSelecting && activeTool === 'select' && cell) {
+            selEndCol = cell.col;
+            selEndRow = cell.row;
+            draw();
+        }
+
         if (movedCell || isPainting) {
             draw();
         }
@@ -708,6 +983,10 @@ window.addEventListener('mouseup', () => {
     if (isPanning) {
         isPanning = false;
         updateCursorStyle();
+    }
+    if (isSelecting) {
+        isSelecting = false;
+        // Selection is kept active until user acts or switches tool
     }
 });
 
@@ -812,11 +1091,14 @@ function renderPalette() {
 
         wrapper.addEventListener('click', () => {
             selectedTileId = id;
-            if (activeTool !== 'brush') {
+            // Keep 'select' tool active so selection is preserved.
+            // Only auto-switch to brush when coming from eraser/fill.
+            if (activeTool !== 'brush' && activeTool !== 'select') {
                 setActiveTool('brush');
+            } else {
+                renderPalette();
+                updateActiveToolLabel();
             }
-            renderPalette();
-            updateActiveToolLabel();
         });
 
         grid.appendChild(wrapper);
@@ -913,6 +1195,85 @@ function paintCell(col, row) {
     } else if (activeTool === 'eraser') {
         mapData[row][col] = 0;
     }
+}
+
+function floodFill(startCol, startRow) {
+    const targetId = mapData[startRow][startCol];
+
+    // If target cell already has the selected tile, do nothing
+    if (targetId === selectedTileId) return;
+
+    // Save state for undo before modifying
+    saveHistory();
+
+    // BFS flood fill
+    const queue = [[startCol, startRow]];
+    const visited = Array.from({ length: MAP_ROWS }, () => Array(MAP_COLS).fill(false));
+    visited[startRow][startCol] = true;
+
+    const directions = [[0,1],[0,-1],[1,0],[-1,0]];
+
+    while (queue.length > 0) {
+        const [col, row] = queue.shift();
+        mapData[row][col] = selectedTileId;
+
+        for (const [dc, dr] of directions) {
+            const nc = col + dc;
+            const nr = row + dr;
+            if (
+                nc >= 0 && nc < MAP_COLS &&
+                nr >= 0 && nr < MAP_ROWS &&
+                !visited[nr][nc] &&
+                mapData[nr][nc] === targetId
+            ) {
+                visited[nr][nc] = true;
+                queue.push([nc, nr]);
+            }
+        }
+    }
+
+    draw();
+}
+
+function getSelectionBounds() {
+    if (selStartCol === null) return null;
+    return {
+        c1: Math.min(selStartCol, selEndCol ?? selStartCol),
+        r1: Math.min(selStartRow, selEndRow ?? selStartRow),
+        c2: Math.max(selStartCol, selEndCol ?? selStartCol),
+        r2: Math.max(selStartRow, selEndRow ?? selStartRow)
+    };
+}
+
+function clearSelection() {
+    selStartCol = selStartRow = selEndCol = selEndRow = null;
+    isSelecting = false;
+}
+
+function fillSelection() {
+    const bounds = getSelectionBounds();
+    if (!bounds) return;
+    saveHistory();
+    for (let r = bounds.r1; r <= bounds.r2; r++) {
+        for (let c = bounds.c1; c <= bounds.c2; c++) {
+            mapData[r][c] = selectedTileId;
+        }
+    }
+    clearSelection();
+    draw();
+}
+
+function eraseSelection() {
+    const bounds = getSelectionBounds();
+    if (!bounds) return;
+    saveHistory();
+    for (let r = bounds.r1; r <= bounds.r2; r++) {
+        for (let c = bounds.c1; c <= bounds.c2; c++) {
+            mapData[r][c] = 0;
+        }
+    }
+    clearSelection();
+    draw();
 }
 
 // --- Undo/Redo Functions ---
@@ -1414,6 +1775,26 @@ window.addEventListener('keydown', (e) => {
 
     // Ignore tool shortcuts when typing in an input field
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    // Selection keys — exact e.key match (Enter/Delete/Escape)
+    if (activeTool === 'select') {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            fillSelection();
+            return;
+        }
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
+            eraseSelection();
+            return;
+        }
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            clearSelection();
+            draw();
+            return;
+        }
+    }
 
     switch (e.key.toLowerCase()) {
         case 'b': setActiveTool('brush');  break;
