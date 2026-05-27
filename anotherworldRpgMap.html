@@ -873,6 +873,7 @@ function panToCell(col, row) {
 }
 
 // --- Center Position Input Navigation ---
+// --- Center Position Input Navigation --- (이 부분 전체 교체)
 (function () {
     function applyPanFromInputs() {
         const posX = document.getElementById('input-pos-x');
@@ -883,35 +884,35 @@ function panToCell(col, row) {
         const row = parseInt(posY.value);
 
         if (isNaN(col) || isNaN(row) || col < 0 || row < 0) {
-            showToast('Invalid coordinates', 'warning', 2000);
-            // Restore current center values
-            updatePropertiesCenter();
-            return;
+            return; // 잘못된 값은 무시 (오류 토스트는 Enter나 blur 때만)
         }
 
         panToCell(col, row);
     }
 
     ['input-pos-x', 'input-pos-y'].forEach(id => {
-        // Use event delegation after DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById(id);
             if (!el) return;
 
-            // Enter key → pan immediately
+            // 실시간 업데이트 (화살표 키, 마우스 휠 등으로 값 바뀔 때)
+            el.addEventListener('input', () => {
+                applyPanFromInputs();
+            });
+
+            // Enter 키 → 즉시 적용 + 포커스 아웃
             el.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     applyPanFromInputs();
                     el.blur();
                 }
-                // Escape → restore current center without navigating
                 if (e.key === 'Escape') {
-                    updatePropertiesCenter();
+                    updatePropertiesCenter(); // 원래 값으로 복구
                     el.blur();
                 }
             });
 
-            // Blur (click away) → pan if value changed
+            // 포커스 잃을 때도 적용 (안전장치)
             el.addEventListener('blur', () => {
                 applyPanFromInputs();
             });
